@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YT2TXT · YouTube Transcript Grabber</title>
+<meta name="description" content="Grab a YouTube video transcript as clean text, timestamped lines, or SRT. Copy or download. Playlists and history included.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23ff0033'/%3E%3Cpath d='M9 7l8 5-8 5z' fill='white'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0f0f0f;--card:#1b1b1b;--line:#303030;--tx:#f1f1f1;--dim:#aaa;--red:#ff0033;--ok:#3fb950;--err:#f85149;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Roboto,'Segoe UI',system-ui,Arial,sans-serif;}
+.wrap{max-width:880px;margin:0 auto;padding:18px 16px 60px;}
+header{display:flex;align-items:center;gap:12px;padding:6px 0 18px;}
+.logo{width:36px;height:26px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;}
+.logo::after{content:'';border-left:11px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px;}
+h1{font-size:19px;margin:0;letter-spacing:.2px;}
+.tag{color:var(--dim);font-size:12.5px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+.card h2{font-size:15px;margin:0 0 10px;}
+.hidden{display:none!important;}
+.dim{color:var(--dim);}
+.inrow{display:flex;gap:10px;flex-wrap:wrap;}
+#urlInput{flex:1;min-width:220px;background:#0f0f0f;border:1px solid var(--line);border-radius:999px;padding:11px 16px;color:var(--tx);font-size:14.5px;outline:none;}
+#urlInput:focus{border-color:#717171;}
+.btn{background:var(--red);color:#fff;border:none;border-radius:999px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn:hover{filter:brightness(1.15);}
+.btn:disabled{opacity:.45;cursor:default;filter:none;}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--tx);font-weight:500;}
+.btn.ghost:hover{border-color:#666;}
+.btn.sm{padding:6px 14px;font-size:12.5px;}
+.hint{color:var(--dim);font-size:12.5px;margin-top:8px;}
+.linklike{background:none;border:none;color:#3ea6ff;cursor:pointer;padding:0;font-size:12.5px;text-decoration:underline;}
+#status{color:var(--dim);font-size:13px;min-height:18px;margin-top:9px;}
+.error{background:#2a1215;border:1px solid var(--err);color:#ffb3b8;padding:10px 14px;border-radius:10px;margin-top:10px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start;}
+.error button{background:none;border:none;color:#ffb3b8;cursor:pointer;font-size:15px;line-height:1;padding:2px;}
+.vtitle{font-size:15.5px;font-weight:600;margin-bottom:2px;}
+.vtitle a{color:var(--tx);text-decoration:none;}
+.vtitle a:hover{color:#fff;text-decoration:underline;}
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.controls label{font-size:13px;color:var(--dim);}
+select{background:#0f0f0f;color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13.5px;max-width:100%;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{border:1px solid var(--line);background:transparent;color:var(--tx);border-radius:999px;padding:7px 16px;font-size:13px;cursor:pointer;}
+.chip.on{background:#f1f1f1;color:#0f0f0f;border-color:#f1f1f1;font-weight:700;}
+pre#out{background:#0f0f0f;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:440px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13.5px;margin:12px 0 8px;}
+pre#out.clean{font-family:inherit;line-height:1.7;}
+pre#out.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.6;}
+.stats{color:var(--dim);font-size:12.5px;}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.plrow{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:9px;font-size:13.5px;}
+.plrow:hover{background:#272727;}
+.plrow input{accent-color:var(--red);}
+.plidx{color:var(--dim);width:26px;text-align:right;flex:none;}
+.pltitle{cursor:pointer;}
+.pltitle:hover{color:#fff;text-decoration:underline;}
+.pldur{color:var(--dim);font-size:12px;flex:none;}
+.plst{margin-left:auto;font-size:12px;color:var(--dim);flex:none;max-width:45%;text-align:right;}
+.plst.ok{color:var(--ok);}
+.plst.err{color:var(--err);}
+.bar{height:6px;background:#272727;border-radius:99px;overflow:hidden;margin:10px 0 6px;}
+.bar>div{height:100%;background:var(--red);width:0%;transition:width .25s;}
+.histrow{display:block;width:100%;text-align:left;background:transparent;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 12px;margin:6px 0 0;cursor:pointer;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.histrow:hover{border-color:#666;}
+details.help{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 16px;margin-bottom:14px;}
+details.help summary{cursor:pointer;font-weight:600;padding:10px 0;}
+details.help h3{font-size:13.5px;margin:14px 0 4px;}
+details.help p{font-size:13.5px;color:var(--dim);margin:4px 0;}
+footer{color:#777;font-size:12px;margin-top:24px;line-height:1.6;}
+a{color:#3ea6ff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo"></div>
+  <div>
+    <h1>YT2TXT</h1>
+    <div class="tag">YouTube transcript → clean text · timestamps · SRT</div>
+  </div>
+</header>
+
+<div class="card">
+  <div class="inrow">
+    <input id="urlInput" type="text" spellcheck="false" autocomplete="off"
+      placeholder="Paste a YouTube video, Shorts, or playlist link — or a video ID">
+    <button class="btn" id="getBtn">Get transcript</button>
+  </div>
+  <div class="hint">Works with <b>watch</b>, <b>youtu.be</b>, <b>/shorts</b>, <b>/embed</b>, <b>music.youtube</b> and <b>playlist</b> links — or a bare 11-character video ID. <button class="linklike" id="exampleBtn">try an example</button></div>
+  <div id="status"></div>
+  <div id="errBox" class="error hidden"><span id="errMsg"></span><button id="errClose" title="Dismiss">✕</button></div>
+</div>
+
+<div class="card hidden" id="videoCard">
+  <div class="vtitle"><a id="vLink" target="_blank" rel="noopener"></a></div>
+  <div class="dim" id="vSub" style="font-size:13px"></div>
+  <div class="controls">
+    <label for="langSel">Language</label>
+    <select id="langSel"></select>
+    <span class="dim" id="langBadge" style="font-size:12.5px"></span>
+  </div>
+  <div class="controls">
+    <div class="chips" id="fmtChips">
+      <button class="chip on" data-fmt="clean">Clean text</button>
+      <button class="chip" data-fmt="ts">Timestamps</button>
+      <button class="chip" data-fmt="srt">SRT</button>
+    </div>
+  </div>
+  <pre id="out" class="clean"></pre>
+  <div class="stats" id="stats"></div>
+  <div class="actions">
+    <button class="btn ghost" id="copyBtn">Copy</button>
+    <button class="btn ghost" id="dlBtn">Download .txt</button>
+    <a class="btn ghost" id="ytLink" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;">Open on YouTube</a>
+  </div>
+</div>
+
+<div class="card hidden" id="plCard">
+  <h2 id="plTitle">Playlist</h2>
+  <div class="dim" id="plSub" style="font-size:12.5px;margin-bottom:10px;"></div>
+  <div class="actions" style="margin-top:0;margin-bottom:10px;">
+    <button class="btn sm ghost" id="plAll">Select all</button>
+    <button class="btn sm ghost" id="plNone">Select none</button>
+    <button class="btn sm" id="plFetch">Fetch selected transcripts</button>
+  </div>
+  <div class="bar"><div id="plBarFill"></div></div>
+  <div class="dim" id="plProg" style="font-size:12.5px;margin-bottom:6px;"></div>
+  <div id="plList"></div>
+  <div class="actions">
+    <button class="btn ghost" id="plCopy" disabled>Copy all</button>
+    <button class="btn ghost" id="plDl" disabled>Download all</button>
+  </div>
+</div>
+
+<div class="card" id="histCard">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h2 style="margin:0;">Recent</h2>
+    <button class="btn sm ghost" id="histClear">Clear</button>
+  </div>
+  <div id="histList"></div>
+</div>
+
+<details class="help">
+  <summary>How it works, tips &amp; limitations</summary>
+  <h3>Formats</h3>
+  <p><b>Clean text</b> joins captions into readable paragraphs (breaking at pauses and sentences). <b>Timestamps</b> gives one <code>[m:ss]</code> line per moment so you can cite exact parts. <b>SRT</b> is the standard subtitle file — drop it into a video player or editor.</p>
+  <h3>Languages</h3>
+  <p>The picker lists every caption track the video actually has (manual uploads and auto-generated ones, marked <i>auto-generated</i>). Your last picked language is remembered for later videos and playlist batches.</p>
+  <h3>Playlists</h3>
+  <p>Paste a playlist link (or any video link with <code>&amp;list=…</code>) to load all its videos, then select which ones to fetch. Combined output uses whichever format chip is active. Batches are capped at the first 100 videos and run one-by-one to stay polite to the relays.</p>
+  <h3>How it reaches YouTube</h3>
+  <p>First it asks YouTube's own internal API directly from your browser — no relay, and on normal home networks YouTube answers happily (this is what saves videos when the relays are blocked). Caption files are then fetched through Piped's open media proxy, which forwards them with CORS enabled. If any of that fails, it falls back to the Piped API, Invidious instances, and generic CORS proxies, trying each source in order until one answers. Nothing is installed or sent anywhere else.</p>
+  <h3>Limitations</h3>
+  <p>Private, age-restricted, members-only and captionless videos have no accessible transcripts. YouTube also "bot-walls" datacenter IPs: the public relays sometimes get challenged for individual videos ("Sign in to confirm you're not a bot") — the direct-from-browser path usually rescues those; if both fail, wait a minute and retry. Auto-generated captions have no punctuation, so "clean text" for them is one long stream of words broken only by pauses.</p>
+</details>
+
+<footer>
+  Runs entirely in your browser — no install, no keys, no tracking; history lives in your browser's localStorage.
+  Requests are relayed via public services (Piped / Invidious / CORS proxies) because YouTube blocks direct cross-origin access.
+  Not affiliated with YouTube™.
+</footer>
+</div>
+
+<script>
+/*__CORE_START__*/
+function pad2(n){ n=Math.floor(Math.abs(n)); return n<10?'0'+n:''+n; }
+function parseClock(s){
+  s=(s||'').trim();
+  const m=s.match(/^(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/);
+  if(!m) return null;
+  const h=m[1]?parseInt(m[1],10):0, mi=parseInt(m[2],10), se=parseInt(m[3],10);
+  const ms=m[4]?parseInt(m[4].padEnd(3,'0'),10):0;
+  return h*3600+mi*60+se+ms/1000;
+}
+function fmtClock(sec){
+  sec=Math.max(0,sec||0);
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=Math.floor(sec%60);
+  return h>0 ? h+':'+pad2(m)+':'+pad2(s) : m+':'+pad2(s);
+}
+function fmtSrt(sec){
+  sec=Math.max(0,sec||0);
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=Math.floor(sec%60);
+  const ms=Math.min(999,Math.round((sec-Math.floor(sec))*1000));
+  return pad2(h)+':'+pad2(m)+':'+pad2(s)+','+String(ms).padStart(3,'0');
+}
+function parseInput(input){
+  const out={videoId:null,playlistId:null};
+  const s=(input||'').trim();
+  if(!s) return out;
+  const pm=s.match(/[?&]list=([A-Za-z0-9_-]+)/);
+  if(pm) out.playlistId=pm[1];
+  const vm=s.match(/(?:v=|\/shorts\/|\/embed\/|\/live\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if(vm) out.videoId=vm[1];
+  else if(/^[A-Za-z0-9_-]{11}$/.test(s)) out.videoId=s;
+  return out;
+}
+function extractJsonAfter(html, varName){
+  let idx=-1;
+  while((idx=html.indexOf(varName, idx+1))>=0){
+    let j=idx+varName.length;
+    while(j<html.length && /\s/.test(html[j])) j++;
+    if(html[j]!=='=') continue;
+    j++;
+    while(j<html.length && /\s/.test(html[j])) j++;
+    if(html[j]!=='{') continue;
+    const start=j; let depth=0,inStr=false,esc=false;
+    for(let i=start;i<html.length;i++){
+      const c=html[i];
+      if(inStr){ if(esc) esc=false; else if(c==='\\') esc=true; else if(c==='"') inStr=false; }
+      else if(c==='"') inStr=true;
+      else if(c==='{') depth++;
+      else if(c==='}'){ depth--; if(depth===0) return html.slice(start,i+1); }
+    }
+  }
+  return null;
+}
+function collectByKey(node, key, out){
+  out=out||[];
+  if(Array.isArray(node)){ for(const x of node) collectByKey(x,key,out); }
+  else if(node && typeof node==='object'){
+    for(const k in node){ if(k===key) out.push(node[k]); else collectByKey(node[k],key,out); }
+  }
+  return out;
+}
+function titleOf(t){
+  if(!t) return '';
+  if(typeof t==='string') return t;
+  if(t.simpleText) return t.simpleText;
+  if(t.runs) return t.runs.map(function(r){return r.text||'';}).join('');
+  if(t.content) return t.content;
+  return '';
+}
+function parsePlaylistData(data){
+  const out=[], seen={};
+  for(const r of collectByKey(data,'playlistVideoRenderer')){
+    const id=r.videoId, t=titleOf(r.title);
+    if(id && !seen[id]){ seen[id]=1; out.push({videoId:id,title:t}); }
+  }
+  for(const l of collectByKey(data,'lockupViewModel')){
+    const id=l.contentId;
+    if(!id || seen[id] || !/^[A-Za-z0-9_-]{11}$/.test(id)) continue;
+    const t=(l.metadata && l.metadata.lockupMetadataViewModel && l.metadata.lockupMetadataViewModel.title && l.metadata.lockupMetadataViewModel.title.content)||'';
+    if(t){ seen[id]=1; out.push({videoId:id,title:t}); }
+  }
+  return out;
+}
+function playerResponseTracks(pr){
+  const ps=(pr&&pr.playabilityStatus)||{};
+  const vd=(pr&&pr.videoDetails)||{};
+  const cap=pr&&pr.captions && pr.captions.playerCaptionsTracklistRenderer;
+  const tracks=((cap&&cap.captionTracks)||[]).map(function(t){
+    return {label:titleOf(t.name), lang:t.languageCode||'', auto:t.kind==='asr', url:'', baseUrl:t.baseUrl||''};
+  }).filter(function(t){return t.baseUrl;});
+  return {
+    meta:{title:vd.title||'', author:vd.author||'', duration:parseInt(vd.lengthSeconds||'0',10)||0},
+    tracks:tracks,
+    reason: ps.status==='OK' ? null : (ps.reason||ps.status||'unavailable')
+  };
+}
+function parseWatchPage(html){
+  const s=extractJsonAfter(html,'ytInitialPlayerResponse');
+  if(!s) return null;
+  let pr; try{ pr=JSON.parse(s); }catch(e){ return null; }
+  return playerResponseTracks(pr);
+}
+function viaPipedProxy(url){
+  const i=url.indexOf('://');
+  if(i<0) return null;
+  const rest=url.slice(i+3);
+  const slash=rest.indexOf('/');
+  if(slash<0) return null;
+  const host=rest.slice(0,slash), path=rest.slice(slash);
+  if(host.indexOf('youtube')<0) return null;
+  return 'https://proxy.piped.private.coffee'+path+(path.indexOf('host=')>=0?'':'&host='+host);
+}
+function metaFromNext(j){
+  const out={title:'',author:''};
+  const walk=function(n){
+    if(!n||typeof n!=='object') return;
+    if(!out.title && n.videoPrimaryInfoRenderer) out.title=titleOf(n.videoPrimaryInfoRenderer.title);
+    if(!out.author && n.videoOwnerRenderer) out.author=titleOf(n.videoOwnerRenderer.title);
+    for(const k in n) walk(n[k]);
+  };
+  walk(j);
+  return out;
+}
+function plTitleFromBrowse(j){
+  let t='';
+  const walk=function(n){
+    if(t||!n||typeof n!=='object') return;
+    if(n.playlistHeaderRenderer) t=titleOf(n.playlistHeaderRenderer.title);
+    else if(n.microformatDataRenderer && !t) t=titleOf(n.microformatDataRenderer.title);
+    for(const k in n) walk(n[k]);
+  };
+  walk(j);
+  return t;
+}
+function parseJson3(d){
+  const segs=[];
+  for(const ev of (d.events||[])){
+    const ss=ev.segs; if(!ss||!ss.length) continue;
+    const base=ev.tStartMs||0, evDur=ev.dDurationMs||0;
+    for(let i=0;i<ss.length;i++){
+      const text=(ss[i].utf8||'').replace(/[\u200b\r\n]+/g,' ');
+      if(!text.trim()) continue;
+      const off=ss[i].tOffsetMs||0;
+      const startMs=base+off;
+      const endMs=(i+1<ss.length)? base+(ss[i+1].tOffsetMs||off) : base+evDur;
+      let dur=(endMs-startMs)/1000;
+      if(!(dur>0)) dur = evDur>0 ? evDur/1000 : 1.5;
+      segs.push({start:startMs/1000, dur:dur, text:text});
+    }
+  }
+  segs.sort(function(a,b){return a.start-b.start;});
+  return segs;
+}
+function parseTtml(xml){
+  const segs=[];
+  const blocks=xml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/g)||[];
+  for(const b of blocks){
+    const head=b.match(/^<p\b([^>]*)>/); if(!head) continue;
+    const attrs={};
+    head[1].replace(/([a-zA-Z:.-]+)="([^"]*)"/g,function(_,k,v){ attrs[k]=v; return ''; });
+    let text=b.replace(/^<p\b[^>]*>/,'').replace(/<\/p>$/,'');
+    text=text.replace(/<br\s*\/?>/gi,' ')
+      .replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;/g,' ')
+      .replace(/&quot;/g,'"')
+      .replace(/&#39;|&apos;/g,"'")
+      .replace(/&lt;/g,'<')
+      .replace(/&gt;/g,'>')
+      .replace(/&amp;/g,'&')
+      .replace(/\s+/g,' ')
+      .trim();
+    if(!text) continue;
+    let start=null,end=null;
+    if(attrs.t!=null) start=parseInt(attrs.t,10)/1000;
+    else if(attrs.begin!=null) start=parseClock(attrs.begin);
+    if(attrs.d!=null && start!=null) end=start+parseInt(attrs.d,10)/1000;
+    else if(attrs.end!=null) end=parseClock(attrs.end);
+    if(start==null) continue;
+    if(end==null || end<=start) end=start+1.5;
+    segs.push({start:start, dur:end-start, text:text});
+  }
+  segs.sort(function(a,b){return a.start-b.start;});
+  return segs;
+}
+function parseVtt(vtt){
+  const segs=[];
+  const blocks=vtt.replace(/\r/g,'').split(/\n\n+/);
+  for(const b of blocks){
+    const lines=b.split('\n').filter(function(l){
+      l=l.trim();
+      return l && !/^WEBVTT/i.test(l) && !/^NOTE\b/i.test(l) && !/^(Kind|Language|Style|Region):/i.test(l);
+    });
+    let ti=-1;
+    for(let i=0;i<lines.length;i++){ if(lines[i].indexOf('-->')>=0){ ti=i; break; } }
+    if(ti<0) continue;
+    const mm=lines[ti].match(/([\d:.,]+)\s*-->\s*([\d:.,]+)/);
+    if(!mm) continue;
+    const start=parseClock(mm[1]), end=parseClock(mm[2]);
+    const text=lines.slice(ti+1).join(' ')
+      .replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;/g,' ')
+      .replace(/&quot;/g,'"')
+      .replace(/&#39;|&apos;/g,"'")
+      .replace(/&lt;/g,'<')
+      .replace(/&gt;/g,'>')
+      .replace(/&amp;/g,'&')
+      .replace(/\s+/g,' ')
+      .trim();
+    if(!text || start==null) continue;
+    segs.push({start:start, dur:Math.max(0,(end||start+1.5)-start), text:text});
+  }
+  segs.sort(function(a,b){return a.start-b.start;});
+  return segs;
+}
+function parseCaptionPayload(text){
+  const t=(text||'').trim();
+  if(t.charAt(0)==='{') return parseJson3(JSON.parse(t));
+  if(t.charAt(0)==='<') return parseTtml(t);
+  if(/^WEBVTT/i.test(t)) return parseVtt(t);
+  throw new Error('unrecognized caption format');
+}
+function joinSeg(a,b){
+  if(!a) return b;
+  if(/\s$/.test(a) || /^\s/.test(b)) return a+b;
+  const x=a.slice(-1), y=b.charAt(0);
+  if(/[A-Za-z0-9.,;:!?%)\]'’"”]/.test(x) && /[A-Za-z0-9(\['‘"“]/.test(y)) return a+' '+b;
+  return a+b;
+}
+function cleanText(segs, paragraphs){
+  if(!paragraphs){
+    let s='';
+    for(const x of segs) s=joinSeg(s,x.text);
+    return s.replace(/\s{2,}/g,' ').trim();
+  }
+  const paras=[]; let buf='', lastEnd=0, lastTag='';
+  const flush=function(){ const t=buf.replace(/\s{2,}/g,' ').trim(); if(t) paras.push(t); buf=''; };
+  for(const s of segs){
+    let txt=s.text;
+    const t=txt.trim();
+    if(/^\[[^\]]{1,30}\]$/.test(t)){
+      if(t===lastTag){ lastEnd=s.start+s.dur; continue; }
+      lastTag=t;
+    } else lastTag='';
+    if(buf && s.start-lastEnd>3) flush();
+    buf=joinSeg(buf,txt);
+    if(t) lastEnd=s.start+s.dur;
+    const tt=buf.trim();
+    if(tt.length>1200){
+      const cut=tt.lastIndexOf(' ',1050);
+      if(cut>400){ paras.push(tt.slice(0,cut).replace(/\s{2,}/g,' ').trim()); buf=tt.slice(cut); }
+      else flush();
+    } else if(/[.!?…]["'’”)\]]?$/.test(tt) && tt.length>320) flush();
+  }
+  flush();
+  return paras.join('\n\n');
+}
+function groupLines(segs){
+  const lines=[]; let cur=null;
+  const flush=function(){
+    if(cur && cur.text.trim()){
+      lines.push({start:cur.start, end:cur.end, text:cur.text.replace(/\s{2,}/g,' ').trim()});
+    }
+    cur=null;
+  };
+  for(const s of segs){
+    if(cur && (s.start-cur.end>3 || cur.text.trim().split(/\s+/).length>=14 || cur.text.length>=80)) flush();
+    if(!cur) cur={start:s.start, end:s.start+s.dur, text:''};
+    cur.text=joinSeg(cur.text,s.text);
+    const e=s.start+s.dur;
+    if(e>cur.end) cur.end=e;
+  }
+  flush();
+  return lines;
+}
+function timestampedText(segs){
+  return groupLines(segs).map(function(l){ return '['+fmtClock(l.start)+'] '+l.text; }).join('\n');
+}
+function srtText(segs){
+  const lines=groupLines(segs);
+  let out='';
+  for(let i=0;i<lines.length;i++){
+    const L=lines[i];
+    out+=(i+1)+'\n'+fmtSrt(L.start)+' --> '+fmtSrt(Math.max(L.end, L.start+0.9))+'\n'+L.text+'\n\n';
+  }
+  return out.trim();
+}
+function langLabel(code){
+  try{
+    if(!langLabel._dn) langLabel._dn=new Intl.DisplayNames(['en'],{type:'language'});
+    const n=langLabel._dn.of(code);
+    if(n && n!==code) return n;
+  }catch(e){}
+  return code||'Unknown';
+}
+function tracksFromPiped(j){
+  const out=[];
+  for(const s of (j.subtitles||[])){
+    out.push({label:langLabel(s.code)+(s.autoGenerated?' (auto-generated)':''), lang:s.code||'', auto:!!s.autoGenerated, url:s.url||'', baseUrl:''});
+  }
+  return out;
+}
+function tracksFromInvidious(j, base){
+  const out=[];
+  for(const c of (j.captions||[])){
+    let u=c.url||'';
+    if(u && u.charAt(0)==='/') u=base+u;
+    if(!u) continue;
+    out.push({label:c.label||langLabel(c.languageCode)+(c.autoGenerated?' (auto-generated)':''), lang:c.languageCode||'', auto:/auto/i.test(c.label||''), url:u, baseUrl:''});
+  }
+  return out;
+}
+function pickTrack(tracks, prefLang){
+  if(!tracks.length) return -1;
+  const p=(prefLang||'').toLowerCase();
+  if(p){
+    let i=tracks.findIndex(function(t){ return (t.lang||'').toLowerCase()===p; });
+    if(i>=0) return i;
+    const b=p.split('-')[0];
+    i=tracks.findIndex(function(t){ return (t.lang||'').toLowerCase().split('-')[0]===b && b.length>1; });
+    if(i>=0) return i;
+  }
+  const m=tracks.findIndex(function(t){ return !t.auto; });
+  return m>=0 ? m : 0;
+}
+function withFmt(url, f){
+  if(url.indexOf('fmt=')>=0) return url.replace(/fmt=[^&]*/,'fmt='+f);
+  return url+(url.indexOf('?')>=0?'&':'?')+'fmt='+f;
+}
+function slugify(s){
+  return (s||'').replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').slice(0,60);
+}
+function relTime(ts){
+  const d=Date.now()/1000-(ts||0);
+  if(d<60) return 'just now';
+  if(d<3600) return Math.floor(d/60)+'m ago';
+  if(d<86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+/*__CORE_END__*/
+
+/* ---------- app ---------- */
+const $=function(id){ return document.getElementById(id); };
+const PIPED_HOSTS=['https://api.piped.private.coffee'];
+const INVIDIOUS_HOSTS=['https://inv.nadeko.net','https://yewtu.be','https://invidious.nerdvpn.de','https://iv.melmac.space','https://invidious.materialio.us'];
+const PROXIES=[
+  {name:'allorigins', make:function(u){ return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u); }},
+  {name:'allorigins-json', make:function(u){ return 'https://api.allorigins.win/get?url='+encodeURIComponent(u); }, unwrap:function(t){ try{ const j=JSON.parse(t); return (j&&j.contents)||''; }catch(e){ return ''; } }},
+  {name:'codetabs', make:function(u){ return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u); }},
+  {name:'cors-workers', make:function(u){ return 'https://test.cors.workers.dev/?'+u; }},
+  {name:'cors-lol', make:function(u){ return 'https://api.cors.lol/?url='+encodeURIComponent(u); }}
+];
+const sleep=function(ms){ return new Promise(function(r){ setTimeout(r,ms); }); };
+
+async function fetchT(url, opts, ms){
+  if(typeof opts==='number'){ ms=opts; opts={}; }
+  const c=new AbortController();
+  const t=setTimeout(function(){ c.abort(); }, ms||15000);
+  try{ return await fetch(url, Object.assign({}, opts||{}, {signal:c.signal})); }
+  finally{ clearTimeout(t); }
+}
+async function getJSON(url, ms){
+  const r=await fetchT(url,ms);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+async function getText(url, ms){
+  const r=await fetchT(url,ms);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.text();
+}
+async function proxyText(url, validate){
+  for(const p of PROXIES){
+    try{
+      let t=await getText(p.make(url), 35000);
+      if(p.unwrap) t=p.unwrap(t);
+      if(t && (!validate || validate(t))) return t;
+    }catch(e){}
+  }
+  return null;
+}
+async function fetchSegs(track){
+  if(track.url){
+    try{ return parseCaptionPayload(await getText(withFmt(track.url,'json3'), 25000)); }catch(e){}
+    return parseCaptionPayload(await getText(track.url, 25000));
+  }
+  if(track.baseUrl){
+    const u3=withFmt(track.baseUrl,'json3');
+    const pp3=viaPipedProxy(u3), pp0=viaPipedProxy(track.baseUrl);
+    const attempts=[];
+    if(pp3) attempts.push(pp3);
+    if(pp0 && pp0!==pp3) attempts.push(pp0);
+    for(const a of attempts){
+      try{ return parseCaptionPayload(await getText(a, 25000)); }catch(e){}
+    }
+    const t=await proxyText(u3, function(x){ const s=x.trim(); return s.charAt(0)==='{' && x.indexOf('"events"')>=0; });
+    if(t) return parseCaptionPayload(t);
+    const t2=await proxyText(track.baseUrl, function(x){ const s=x.trim(); return s.charAt(0)==='<' || /^WEBVTT/i.test(s); });
+    if(t2) return parseCaptionPayload(t2);
+    throw new Error('caption download failed through all relays');
+  }
+  throw new Error('no caption URL');
+}
+
+const state={videoId:null, meta:null, tracks:null, trackIdx:0, segs:null, fmt:'clean', source:'', rendered:''};
+let preferredLang=null;
+let busy=false;
+
+function showStatus(msg){ $('status').textContent=msg||''; }
+function showError(msg){
+  $('errMsg').textContent=msg;
+  $('errBox').classList.remove('hidden');
+}
+function hideError(){ $('errBox').classList.add('hidden'); }
+function setBusy(b){
+  busy=b;
+  $('getBtn').disabled=b;
+  $('plFetch').disabled=b;
+}
+
+/* ---------- sources ---------- */
+let pipedBotWall=false, relayNote='';
+async function ytiPOST(endpoint, bodyObj){
+  const url='https://www.youtube.com/youtubei/v1/'+endpoint+'?prettyPrint=false';
+  const body=JSON.stringify(bodyObj);
+  try{
+    const r=await fetchT(url,{method:'POST',headers:{'Content-Type':'text/plain'},body},20000);
+    if(r.ok){ const j=await r.json(); if(j&&typeof j==='object'&&!j.error) return j; }
+  }catch(e){}
+  try{
+    const r=await fetchT(url,{method:'POST',headers:{'Content-Type':'application/json'},body},20000);
+    if(r.ok){ const j=await r.json(); if(j&&typeof j==='object'&&!j.error) return j; }
+  }catch(e){}
+  return null;
+}
+async function getSourceYoutubei(videoId, onTry){
+  onTry('youtube.com direct (no relay)');
+  const clients=[
+    {clientName:'ANDROID', clientVersion:'19.09.37', androidSdkVersion:30, osName:'Android', osVersion:'11', hl:'en'},
+    {clientName:'ANDROID', clientVersion:'19.44.38', androidSdkVersion:30, osName:'Android', osVersion:'11', hl:'en'},
+    {clientName:'IOS', clientVersion:'19.45.4', deviceModel:'iPhone16,2', hl:'en'},
+    {clientName:'WEB', clientVersion:'2.20261112.10.00', hl:'en'}
+  ];
+  for(const c of clients){
+    const j=await ytiPOST('player',{context:{client:c},videoId:videoId,contentCheckOk:true,racyCheckOk:true});
+    if(!j) continue;
+    const r=playerResponseTracks(j);
+    if(r.tracks.length){
+      if(!r.meta.title){
+        try{
+          const jn=await ytiPOST('next',{context:{client:{clientName:'WEB',clientVersion:'2.20261112.10.00',hl:'en'}},videoId:videoId});
+          const m=metaFromNext(jn);
+          if(m.title){ r.meta.title=m.title; r.meta.author=r.meta.author||m.author; }
+        }catch(e){}
+      }
+      r.source='youtube.com direct ('+c.clientName+' client, no relay)';
+      return r;
+    }
+  }
+  return null;
+}
+async function getSourcePiped(videoId, onTry){
+  for(const host of PIPED_HOSTS){
+    onTry('Piped ('+host.replace('https://','')+')');
+    try{
+      const r=await fetchT(host+'/streams/'+videoId, {}, 20000);
+      const txt=await r.text();
+      if(!r.ok){
+        if(/sign in to confirm|not a bot|LOGIN_REQUIRED/i.test(txt)) pipedBotWall=true;
+        continue;
+      }
+      let j=null; try{ j=JSON.parse(txt); }catch(e){}
+      if(j && j.error && /sign in to confirm|not a bot|blocked/i.test(j.error)) pipedBotWall=true;
+      const tr=j?tracksFromPiped(j):[];
+      if(j && tr.length && !j.error){
+        return {meta:{title:j.title||'', author:j.uploader||'', duration:j.duration||0}, tracks:tr, source:'Piped ('+host.replace('https://','')+')'};
+      }
+    }catch(e){}
+  }
+  return null;
+}
+async function collectSources(videoId, onTry){
+  const out=[];
+  const sy=await getSourceYoutubei(videoId, onTry);
+  if(sy) out.push(sy);
+  const sp=await getSourcePiped(videoId, onTry);
+  if(sp) out.push(sp);
+  if(out.length) return out;
+  for(const base of INVIDIOUS_HOSTS){
+    onTry('Invidious ('+base.replace('https://','')+')');
+    try{
+      const j=await getJSON(base+'/api/v1/videos/'+videoId, 20000);
+      const tr=tracksFromInvidious(j, base);
+      if(tr.length){
+        out.push({meta:{title:j.title||'', author:j.author||'', duration:j.lengthSeconds||0}, tracks:tr, source:'Invidious ('+base.replace('https://','')+')'});
+      }
+    }catch(e){}
+  }
+  onTry('CORS proxies → youtube.com');
+  const html=await proxyText('https://www.youtube.com/watch?v='+videoId+'&hl=en', function(t){ return t.indexOf('ytInitialPlayerResponse')>=0; });
+  if(html){
+    const w=parseWatchPage(html);
+    if(w){
+      if(w.tracks.length) out.push({meta:w.meta, tracks:w.tracks, source:'watch page via CORS proxy'});
+      else if(!w.reason) relayNote='NO_CAPTIONS_PAGE';
+    }
+  }
+  return out;
+}
+
+/* ---------- video flow ---------- */
+async function loadVideo(id, opts){
+  opts=opts||{};
+  if(!opts.quiet){ hideError(); setBusy(true); }
+  showStatus('Fetching video info…');
+  pipedBotWall=false; relayNote='';
+  let candidates=[];
+  try{
+    candidates=await collectSources(id, function(name){ showStatus('Trying: '+name+'…'); });
+  }catch(e){ candidates=[]; }
+  let done=false;
+  for(const src of candidates){
+    state.videoId=id; state.meta=src.meta; state.tracks=src.tracks; state.source=src.source;
+    state.segs=null; state.rendered='';
+    if(!opts.quiet){
+      $('vLink').textContent=src.meta.title||('(untitled · '+id+')');
+      $('vLink').href='https://youtu.be/'+id;
+      $('vSub').textContent=[src.meta.author, fmtClock(src.meta.duration), id].filter(Boolean).join(' · ');
+      $('ytLink').href='https://youtu.be/'+id;
+      $('videoCard').classList.remove('hidden');
+      $('out').textContent='';
+      $('stats').textContent='';
+      $('langBadge').textContent='';
+      renderLangSelect();
+    }
+    const idx=pickTrack(src.tracks, preferredLang||(navigator.language||''));
+    try{
+      await loadTrack(idx<0?0:idx, opts);
+      done=true;
+      break;
+    }catch(e){
+      showStatus('That source failed — trying the next one…');
+    }
+  }
+  if(!opts.quiet){
+    setBusy(false); showStatus('');
+    if(done) pushHistory({kind:'video', id:id, title:(state.meta&&state.meta.title)||id, lang:(state.tracks[state.trackIdx]||{}).lang||''});
+    else showError(buildVideoError());
+  }
+  if(!done) throw new Error('all sources failed');
+}
+function buildVideoError(){
+  if(relayNote==='NO_CAPTIONS_PAGE') return "YouTube served the video but it doesn't have any captions or subtitles available.";
+  if(pipedBotWall) return "YouTube is temporarily bot-blocking the public relays for this video (they run on datacenter IPs — it's the \"Sign in to confirm you're not a bot\" wall). The app also tried YouTube directly from your browser; if that failed too, your network may be flagged (VPN or corporate proxy) or the video may simply have no captions. Retrying in a minute often helps.";
+  return "Couldn't fetch a transcript through YouTube-direct or any public relay (Piped / Invidious / CORS proxies). The relays are free services that get rate-limited — wait ~30 seconds and try again. Private, age-restricted, and captionless videos never work.";
+}
+async function loadTrack(idx, opts){
+  opts=opts||{};
+  state.trackIdx=idx;
+  const tr=state.tracks[idx];
+  if(!opts.quiet) showStatus('Downloading captions ('+tr.label+')…');
+  try{ state.segs=await fetchSegs(tr); }
+  catch(e){
+    if(!opts.quiet) showError('Could not download the caption track: '+e.message);
+    throw e;
+  }
+  if(tr.lang) preferredLang=tr.lang;
+  if(!opts.quiet){
+    renderLangSelect();
+    renderOutput();
+    showStatus('');
+  }
+}
+function renderLangSelect(){
+  const sel=$('langSel');
+  sel.innerHTML='';
+  state.tracks.forEach(function(t,i){
+    const o=document.createElement('option');
+    o.value=String(i);
+    o.textContent=t.label+(t.lang?(' ['+t.lang+']'):'');
+    sel.appendChild(o);
+  });
+  sel.value=String(state.trackIdx||0);
+}
+function renderOutput(){
+  const segs=state.segs||[];
+  let text='';
+  if(state.fmt==='clean') text=cleanText(segs,true);
+  else if(state.fmt==='ts') text=timestampedText(segs);
+  else text=srtText(segs);
+  state.rendered=text;
+  const out=$('out');
+  out.textContent=text;
+  out.className=state.fmt==='clean'?'clean':'mono';
+  const words=text.trim()?text.trim().split(/\s+/).length:0;
+  const dur=segs.length?segs[segs.length-1].start+segs[segs.length-1].dur:0;
+  const tr=state.tracks[state.trackIdx]||{};
+  $('langBadge').textContent=tr.label?('using: '+tr.label):'';
+  $('stats').textContent=segs.length+' caption segments · '+words.toLocaleString()+' words · '+text.length.toLocaleString()+' chars · '+fmtClock(dur)+' covered · '+tr.label+' · via '+state.source;
+  const btn=$('dlBtn');
+  btn.textContent=state.fmt==='srt'?'Download .srt':'Download .txt';
+}
+function downloadText(name, text){
+  const b=new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },5000);
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    let ok=false;
+    try{ ok=document.execCommand('copy'); }catch(_){}
+    ta.remove();
+    return ok;
+  }
+}
+function flashBtn(btn, label){
+  const old=btn.textContent;
+  btn.textContent=label;
+  setTimeout(function(){ btn.textContent=old; },1400);
+}
+
+/* ---------- playlist flow ---------- */
+let plItems=[];
+async function getPlaylistItems(listId, onTry){
+  onTry('youtube.com direct (no relay)');
+  try{
+    const j=await ytiPOST('browse',{context:{client:{clientName:'WEB',clientVersion:'2.20261112.10.00',hl:'en'}},browseId:listId});
+    if(j){
+      const items=parsePlaylistData(j).map(function(x){ return {videoId:x.videoId,title:x.title,duration:0}; });
+      if(items.length) return {title:plTitleFromBrowse(j), items:items, source:'youtube.com direct (no relay)'};
+    }
+  }catch(e){}
+  for(const host of PIPED_HOSTS){
+    onTry('Piped ('+host.replace('https://','')+')');
+    try{
+      const j=await getJSON(host+'/playlists/'+listId, 20000);
+      const vids=(j.relatedStreams||[]).map(function(v){
+        return {videoId:((v.url||'').replace('/watch?v=','').split('&')[0]||''), title:v.title||'', duration:v.duration||0};
+      }).filter(function(v){ return /^[A-Za-z0-9_-]{11}$/.test(v.videoId); });
+      if(vids.length) return {title:j.name||'', items:vids, source:'Piped ('+host.replace('https://','')+')'};
+    }catch(e){}
+  }
+  for(const base of INVIDIOUS_HOSTS){
+    onTry('Invidious ('+base.replace('https://','')+')');
+    try{
+      const j=await getJSON(base+'/api/v1/playlists/'+listId, 20000);
+      const vids=(j.videos||[]).map(function(v){
+        return {videoId:v.videoId||'', title:v.title||'', duration:v.lengthSeconds||0};
+      }).filter(function(v){ return /^[A-Za-z0-9_-]{11}$/.test(v.videoId); });
+      if(vids.length) return {title:j.title||'', items:vids, source:'Invidious ('+base.replace('https://','')+')'};
+    }catch(e){}
+  }
+  onTry('CORS proxies → youtube.com');
+  const html=await proxyText('https://www.youtube.com/playlist?list='+listId+'&hl=en', function(t){ return t.indexOf('ytInitialData')>=0; });
+  if(html){
+    const s=extractJsonAfter(html,'ytInitialData');
+    if(s){
+      try{
+        const items=parsePlaylistData(JSON.parse(s));
+        if(items.length) return {title:'', items:items.map(function(x){ return {videoId:x.videoId,title:x.title,duration:0}; }), source:'playlist page via CORS proxy'};
+      }catch(e){}
+    }
+  }
+  return null;
+}
+async function loadPlaylist(listId){
+  hideError(); setBusy(true);
+  showStatus('Loading playlist…');
+  $('plCard').classList.remove('hidden');
+  $('plList').innerHTML='';
+  $('plProg').textContent='';
+  $('plBarFill').style.width='0%';
+  $('plCopy').disabled=true; $('plDl').disabled=true;
+  let res=null;
+  try{
+    res=await getPlaylistItems(listId, function(name){ showStatus('Trying relay: '+name+'…'); });
+  }catch(e){}
+  setBusy(false); showStatus('');
+  if(!res){
+    showError("Couldn't load this playlist through any relay. Playlists are fetched via Invidious/Piped/proxies — they may be rate-limited. Individual videos still work: paste a plain video link.");
+    return;
+  }
+  const items=res.items.slice(0,100);
+  plItems=items;
+  $('plTitle').textContent='Playlist'+(res.title?(' · '+res.title):'');
+  $('plSub').textContent=items.length+' video'+(items.length===1?'':'s')+(res.items.length>100?' (showing first 100)':'')+' · via '+res.source;
+  const list=$('plList');
+  items.forEach(function(v,i){
+    const row=document.createElement('div');
+    row.className='plrow';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=true;
+    const idx=document.createElement('span'); idx.className='plidx'; idx.textContent=(i+1)+'.';
+    const tt=document.createElement('span'); tt.className='pltitle'; tt.textContent=v.title||v.videoId;
+    tt.title='Open this video\'s transcript';
+    tt.onclick=function(){ $('urlInput').value='https://youtu.be/'+v.videoId; doGet(); };
+    const du=document.createElement('span'); du.className='pldur'; du.textContent=v.duration?fmtClock(v.duration):'';
+    const st=document.createElement('span'); st.className='plst'; st.textContent='';
+    row.appendChild(cb); row.appendChild(idx); row.appendChild(tt); row.appendChild(du); row.appendChild(st);
+    row._video=v; row._st=st;
+    list.appendChild(row);
+  });
+}
+async function fetchSelectedPl(){
+  const rows=Array.prototype.slice.call(document.querySelectorAll('#plList .plrow')).filter(function(r){ return r.querySelector('input').checked; });
+  if(!rows.length) return;
+  setBusy(true); hideError();
+  const fmt=state.fmt;
+  let done=0, ok=0;
+  for(const row of rows){
+    done++;
+    const v=row._video;
+    row._st.textContent='loading…'; row._st.className='plst';
+    $('plProg').textContent=done+' / '+rows.length+' · '+v.title;
+    $('plBarFill').style.width=Math.round(done*100/rows.length)+'%';
+    try{
+      const cands=await collectSources(v.videoId, function(){});
+      let segs=null, src=null;
+      for(const s of cands){
+        const idx=pickTrack(s.tracks, preferredLang||(navigator.language||''));
+        try{
+          segs=await fetchSegs(s.tracks[idx<0?0:idx]);
+          src=s;
+          break;
+        }catch(e){}
+      }
+      if(!src) throw new Error('no relay responded');
+      row._segs=segs;
+      row._title=src.meta.title||v.title;
+      row._lang=(src.tracks[0]||{}).lang||'';
+      row._text = fmt==='srt'? srtText(segs) : fmt==='ts'? timestampedText(segs) : cleanText(segs,true);
+      ok++;
+      row._st.textContent='✓ '+(row._text.trim().split(/\s+/).length.toLocaleString())+' words';
+      row._st.className='plst ok';
+    }catch(e){
+      row._st.textContent='✗ '+(e.message||'failed').slice(0,60);
+      row._st.className='plst err';
+    }
+    await sleep(350);
+  }
+  setBusy(false);
+  $('plProg').textContent='Finished: '+ok+' of '+rows.length+' succeeded.';
+  $('plBarFill').style.width='100%';
+  $('plCopy').disabled=ok===0;
+  $('plDl').disabled=ok===0;
+  if(ok===0) showError('None of the selected videos produced a transcript — the relays are likely rate-limited right now. Wait a bit and retry.');
+  pushHistory({kind:'playlist', id:plListId, title:$('plTitle').textContent.replace('Playlist · ','')||plListId, lang:''});
+}
+function combinedPlText(){
+  const rows=Array.prototype.slice.call(document.querySelectorAll('#plList .plrow')).filter(function(r){ return r._segs; });
+  const sep='\n\n'+'-'.repeat(48)+'\n\n';
+  const parts=rows.map(function(r,i){
+    const txt = state.fmt==='srt'? srtText(r._segs) : state.fmt==='ts'? timestampedText(r._segs) : cleanText(r._segs,true);
+    return '=== '+(i+1)+'. '+r._title+'\nhttps://youtu.be/'+r._video.videoId+'\n\n'+txt;
+  });
+  return 'Transcripts of playlist '+(plListId||'')+'\nGenerated '+new Date().toISOString().slice(0,10)+'\n'+sep+parts.join(sep)+'\n';
+}
+
+/* ---------- history ---------- */
+const HKEY='yt2txt_history_v1';
+let plListId=null;
+function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY)||'[]'); }catch(e){ return []; } }
+function pushHistory(e){
+  let h=loadHist().filter(function(x){ return !(x.id===e.id && x.kind===e.kind); });
+  e.ts=Math.floor(Date.now()/1000);
+  h.unshift(e);
+  h=h.slice(0,25);
+  try{ localStorage.setItem(HKEY,JSON.stringify(h)); }catch(_){}
+  renderHistory();
+}
+function renderHistory(){
+  const h=loadHist();
+  const el=$('histList');
+  el.innerHTML='';
+  if(!h.length){
+    const d=document.createElement('div');
+    d.className='dim';
+    d.textContent='Nothing yet — videos and playlists you fetch will be listed here for one-click re-fetching.';
+    el.appendChild(d);
+    return;
+  }
+  for(const x of h){
+    const b=document.createElement('button');
+    b.className='histrow';
+    b.textContent=(x.kind==='playlist'?'☰ Playlist · ':'▶ ')+(x.title||x.id)+(x.lang?(' ['+x.lang+']'):'')+' · '+relTime(x.ts);
+    b.title=x.kind==='playlist'? ('https://www.youtube.com/playlist?list='+x.id) : ('https://youtu.be/'+x.id);
+    b.onclick=function(){
+      $('urlInput').value=x.kind==='playlist'? ('https://www.youtube.com/playlist?list='+x.id) : ('https://youtu.be/'+x.id);
+      doGet();
+    };
+    el.appendChild(b);
+  }
+}
+
+/* ---------- wiring ---------- */
+async function doGet(){
+  if(busy) return;
+  const input=$('urlInput').value;
+  const p=parseInput(input);
+  hideError();
+  if(!p.videoId && !p.playlistId){
+    showError("Couldn't find a video or playlist ID in that input. Paste a full YouTube link or an 11-character video ID.");
+    return;
+  }
+  plListId=p.playlistId;
+  if(p.videoId){
+    $('plCard').classList.add('hidden');
+    try{ await loadVideo(p.videoId); }catch(e){}
+    if(p.playlistId && !busy){
+      const hint=document.createElement('div');
+      hint.className='hint';
+      hint.innerHTML='This link also contains a playlist (<a href="#" id="plSwitch">load all videos from <b>list='+p.playlistId+'</b></a>).';
+      const old=$('plSwitchHint'); if(old) old.remove();
+      hint.id='plSwitchHint';
+      $('videoCard').appendChild(hint);
+      $('plSwitch').onclick=function(ev){ ev.preventDefault(); hint.remove(); loadPlaylist(p.playlistId); };
+    }
+    return;
+  }
+  $('videoCard').classList.add('hidden');
+  try{ await loadPlaylist(p.playlistId); }catch(e){}
+}
+
+function init(){
+  $('getBtn').onclick=doGet;
+  $('urlInput').addEventListener('keydown',function(e){ if(e.key==='Enter') doGet(); });
+  $('errClose').onclick=hideError;
+  $('exampleBtn').onclick=function(){
+    $('urlInput').value='https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    doGet();
+  };
+  document.querySelectorAll('#fmtChips .chip').forEach(function(ch){
+    ch.onclick=function(){
+      document.querySelectorAll('#fmtChips .chip').forEach(function(c){ c.classList.remove('on'); });
+      ch.classList.add('on');
+      state.fmt=ch.getAttribute('data-fmt');
+      if(state.segs) renderOutput();
+    };
+  });
+  $('langSel').onchange=function(){
+    const i=parseInt(this.value,10);
+    if(!isNaN(i) && state.tracks) loadTrack(i);
+  };
+  $('copyBtn').onclick=async function(){
+    if(!state.rendered) return;
+    const ok=await copyText(state.rendered);
+    flashBtn($('copyBtn'), ok?'Copied ✓':'Copy failed');
+  };
+  $('dlBtn').onclick=function(){
+    if(!state.rendered) return;
+    const name=(slugify(state.meta&&state.meta.title)||state.videoId||'transcript')+'-'+(state.videoId||'')+'.'+(state.fmt==='srt'?'srt':'txt');
+    downloadText(name, state.rendered);
+  };
+  $('plAll').onclick=function(){ document.querySelectorAll('#plList input[type=checkbox]').forEach(function(c){ c.checked=true; }); };
+  $('plNone').onclick=function(){ document.querySelectorAll('#plList input[type=checkbox]').forEach(function(c){ c.checked=false; }); };
+  $('plFetch').onclick=fetchSelectedPl;
+  $('plCopy').onclick=async function(){
+    const t=combinedPlText();
+    const ok=await copyText(t);
+    flashBtn($('plCopy'), ok?'Copied ✓':'Copy failed');
+  };
+  $('plDl').onclick=function(){
+    downloadText('playlist-'+(plListId||'transcripts')+'.txt', combinedPlText());
+  };
+  $('histClear').onclick=function(){
+    try{ localStorage.removeItem(HKEY); }catch(_){}
+    renderHistory();
+  };
+  renderHistory();
+}
+init();
+</script>
+</body>
+</html>
